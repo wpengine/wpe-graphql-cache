@@ -15,28 +15,48 @@
 namespace WPEngine\Graphql;
 
 use WPGraphQL\Labs\Cache\Collection;
+use WPGraphQL\Labs\Admin\Settings;
 use GraphQLRelay\Relay;
+
+const MAGIC_STRING = 'wpe-graphql:';
 
 /**
  * For wpe, when our varnish cache function is invoked, add to paths being filtered.
  * See the wpengine must-use plugin for the 'wpe_purge_varnish_cache_paths' filter.
  * 
  * @param array    $paths  Path, urls to pages cached in varnish to be purged.
- * @param WP_Post  $post_id   Post object id.
+ * @param int   $identifer The requested post_id to purge if one was passed
+ *  or string 'wpe-graphql:all', 'wpe-graphql:cG9zdDo1NjQ='
  */
-add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $post_id ) {
-	
+add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifer ) {
+
 	if ( ! is_array( $paths ) ) {
 		$paths = [];
 	}
 
-	// This purges all cached pages at graphql endpoint.
-	//$add_paths[] = Settings::graphql_endpoint();
+	error_log( "Purge Varnish: $identifer " );
 
 	// When any post changes, look up graphql paths previously queried containing post resources and purge those
 	$collection = new Collection();
-	//$key   = $collection->node_key( 'post' );
-	$id = Relay::toGlobalId( 'post', $post_id );
+	if ( is_int( $identifer ) ) {
+		$id = Relay::toGlobalId( 'post', $identifer );
+	} else {
+		$id = substr( $identifer, strlen( MAGIC_STRING ) );
+
+		// Do something when we trigger varnish purge with an indicator id
+		if ( false === $id ) {
+			return $paths;
+		}
+
+		// Erase any other wpe paths cause we triggered this and want to purge something specific
+		$paths = [];
+
+		if ( 'all' === $id ) {
+			// This purges all cached pages at graphql endpoint.
+			$paths[] = preg_quote( Settings::graphql_endpoint() );
+		}
+	}
+
 	$key = $collection->node_key( $id );
 	$nodes = $collection->get( $key );
 	error_log( "Graphql Purge Post: $key " . print_r($nodes, 1) );
@@ -60,3 +80,13 @@ add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $post_id ) {
 	error_log( 'Graphql Purge Paths: ' . print_r($paths, 1) );
 	return array_unique( $paths );
 }, 10, 2 );
+
+add_action( 'wpgraphql_cache_purge_all', function () {
+	/**
+	 * Invoke the WPE varnish purge function with specific identifier
+	 */
+	if ( method_exists( WpeCommon, 'purge_varnish_cache' ) ) {
+		error_log( 'Trigger Varnish Purge ' );
+		\WpeCommon::purge_varnish_cache( MAGIC_STRING . 'all' );
+	}
+}, 10 );
