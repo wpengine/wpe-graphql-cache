@@ -1,0 +1,9 @@
+{
+    "require-dev": {
+        "codeception/codeception": "^4.1",
+        "codeception/module-webdriver": "^2.0"
+    },
+    "require": {
+        "vlucas/phpdotenv": "^5.4"
+    }
+}
