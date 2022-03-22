@@ -206,8 +206,6 @@ class Acceptance extends \Codeception\Module
 	 */
 	public function cleanUp()
 	{
-		codecept_debug("TEARDOWN");
-
 		if ( $this->should_cleanup ) {
 			codecept_debug( "Cleanup, after" );
 
@@ -218,23 +216,18 @@ class Acceptance extends \Codeception\Module
 						"id" => $this->created_post_id
 					]
 				];
-				codecept_debug( "Cleanup, after" );
 				$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
-				codecept_debug( $this->getModule('REST')->grabResponse() );
 				$this->created_post_id = null;
 			}
 
 			if ( $this->saved_query_id ) {
-				codecept_debug( $this->saved_query_id );
 				$mutation = 'mutation deleteSavedQuery($var: DeleteGraphqlDocumentInput!) { deleteGraphqlDocument (input: $var) { graphqlDocument { id } } }';
 				$vars = [
 					"var" => [
 						"id" => $this->saved_query_id
 					]
 				];
-				codecept_debug( "Cleanup, after" );
 				$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
-				codecept_debug( $this->getModule('REST')->grabResponse() );
 				$this->saved_query_id = null;
 			}
 		}
