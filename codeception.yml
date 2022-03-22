@@ -5,11 +5,22 @@ suites:
         path: .
         modules:
             enabled:
-                - WebDriver:
-                    url: "%WP_URL%"
-                    browser: chrome
-                    port: 9515
+                - Asserts
+                - WPBrowser
+                - REST:
+                    depends: PhpBrowser
+                    part: Json
                 - \Helper\Acceptance
+            config:
+                PhpBrowser:
+                    url: "%WP_URL%"
+                    headers:
+                        Content-Type: application/json
+                WPBrowser:
+                    url: "%WP_URL%"
+                    adminUsername: "%WP_ADMIN_USERNAME%"
+                    adminPassword: "%WP_ADMIN_PASSWORD%"
+                    adminPath: '/wp-admin'
                 
         # add Codeception\Step\Retry trait to AcceptanceTester to enable retries
         step_decorators:
