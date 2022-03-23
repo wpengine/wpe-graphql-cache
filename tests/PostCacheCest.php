@@ -1,11 +1,5 @@
 <?php
 /**
- * WP site must have jwt support. Install wp-graphql-jwt-authentication on the serving WP.
- * Add graphql_jwt_auth_secret_key for that auth plugin to work.
- * 
- * Set up test user with name and password to use for these tests.
- * Role for this user should be 'editor' priveleges. This allows categories to be created with post is inserted.
- * 
  * This collection of tests is intended to:
  *  create a post
  *  query the post, maybe multiple times

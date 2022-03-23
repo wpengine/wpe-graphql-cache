@@ -31,7 +31,6 @@ class Acceptance extends \Codeception\Module
 		$this->login();
 		$this->saved_query_alias = uniqid( "test_runner_" );
 		$this->haveQueryForSinglePost();
-
 	}
 
 	public function login()

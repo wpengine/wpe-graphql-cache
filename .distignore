@@ -5,6 +5,7 @@
 .editorconfig
 .eslintignore
 .eslintrc
+.env
 .git
 .gitignore
 .github
