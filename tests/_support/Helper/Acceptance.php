@@ -6,7 +6,7 @@ namespace Helper;
  * Handle login and save those auth creds as well as add to requests.
  */
 
- // here you can define custom actions
+// here you can define custom actions
 // all public methods declared in helper class will be available in $I
 
 class Acceptance extends \Codeception\Module
@@ -18,18 +18,17 @@ class Acceptance extends \Codeception\Module
 	public $should_cleanup = true;
 
 	// Use this to delete the saved query
-	public $saved_query_id;
+	public $post_query_id;
 
 	// Use this as the queryId
-	public $saved_query_alias;
+	public $post_query_alias;
 
-	// The post id created during tests, and needing cleanup
-	public $created_post_id;
+	// The post ids created during tests, and needing cleanup
+	public $created_posts = [];
 
 	public function _beforeSuite($settings = [])
 	{
 		$this->login();
-		$this->saved_query_alias = uniqid( "test_runner_" );
 		$this->haveQueryForSinglePost();
 	}
 
@@ -60,35 +59,53 @@ class Acceptance extends \Codeception\Module
 	 */
 	public function haveQueryForSinglePost()
 	{
-		if ( ! $this->saved_query_id ) {
-			$mutation = 'mutation MyMutationInsert($input: CreateGraphqlDocumentInput!) {
-				createGraphqlDocument(input: $input) {
+		// This query alias will be used as the queryId in our GET request to check cache requests.
+		$this->post_query_alias = uniqid( "test_runner_" );
+
+		$query = sprintf( 'query get_post_%s ($post: ID!) {
+			post(id: $post) {
+				id
+				title
+				content
+			}
+		}', $this->post_query_alias );
+		$this->post_query_id = $this->haveSavedQuery( $query, [ $this->post_query_alias ] );
+	}
+
+	/**
+	 * Create a saved query for use by this test runner
+	 */
+	public function haveSavedQuery( $query, $aliases = [] )
+	{
+		$mutation = 'mutation MyMutationInsert($input: CreateGraphqlDocumentInput!) {
+			createGraphqlDocument(input: $input) {
 				graphqlDocument {
 					id
 				}
-				}
 			}
-			';
-			$vars = [
-				"input" => [
-					"title" => "Saved query for test runner",
-					"content" => sprintf( 'query get_%s ($post: ID!) {
-						post(id: $post) {
-						id
-						title
-						content
-						}
-					}', $this->saved_query_alias),
-					"alias" => [
-						$this->saved_query_alias
-					],
-					"status" => "PUBLISH",
-				]
-			];
+		}';
+		$vars = [
+			"input" => [
+				"title" => "Saved query for test runner",
+				"content" => $query,
+				"alias" => $aliases,
+				"status" => "PUBLISH",
+			]
+		];
 
-			$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
-			$this->saved_query_id = $this->getModule('REST')->grabDataFromResponseByJsonPath('$..data.createGraphqlDocument.graphqlDocument.id')[0];
-		}
+		$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
+		return $this->getModule('REST')->grabDataFromResponseByJsonPath('$..data.createGraphqlDocument.graphqlDocument.id')[0];
+}
+
+	public function dontHaveSavedQuery( $query_id )
+	{
+		$mutation = 'mutation deleteSavedQuery($var: DeleteGraphqlDocumentInput!) { deleteGraphqlDocument (input: $var) { graphqlDocument { id } } }';
+		$vars = [
+			"var" => [
+				"id" => $query_id
+			]
+		];
+		$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
 	}
 
 	/**
@@ -130,12 +147,12 @@ class Acceptance extends \Codeception\Module
 
 		$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
 		$response = $this->getModule('REST')->grabDataFromResponseByJsonPath('$..data.createPost.post')[0];
-		$this->created_post_id = $response['id'];
+		$this->created_posts[] = $response['id'];
 
 		$this->getModule('Asserts')->assertEquals( $params['title'], $response['title'] );
 		$this->getModule('Asserts')->assertEquals( "<p>{$params['content']}</p>\n", $response['content'] );
 
-		return $this->created_post_id;
+		return $response['id'];
 	}
 
 	public function updatePost( $post_id, $params )
@@ -163,6 +180,17 @@ class Acceptance extends \Codeception\Module
 
 	}
 
+	public function dontHavePost( $post_id )
+	{
+		$mutation = 'mutation deletePost($var: DeletePostInput!) { deletePost (input: $var) { deletedId } }';
+		$vars = [
+			"var" => [
+				"id" => $post_id
+			]
+		];
+		$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
+	}
+
 	/**
 	 * Query graphql server and verify single post id exists.
 	 * Uses saved queryId mutation.
@@ -173,7 +201,7 @@ class Acceptance extends \Codeception\Module
 	public function seePostById( $post_id )
 	{
 		$vars = [ "post" => $post_id ];
-		$this->getModule('REST')->sendGet('graphql', [ 'queryId' => $this->saved_query_alias, 'variables' => $vars ] );
+		$this->getModule('REST')->sendGet('graphql', [ 'queryId' => $this->post_query_alias, 'variables' => $vars ] );
 	}
 
 	/**
@@ -208,26 +236,15 @@ class Acceptance extends \Codeception\Module
 		if ( $this->should_cleanup ) {
 			codecept_debug( "Cleanup, after" );
 
-			if ( $this->created_post_id ) {
-				$mutation = 'mutation deletePost($var: DeletePostInput!) { deletePost (input: $var) { deletedId } }';
-				$vars = [
-					"var" => [
-						"id" => $this->created_post_id
-					]
-				];
-				$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
-				$this->created_post_id = null;
+			if ( $this->created_posts ) {
+				foreach ( $this->created_posts as $post_id ) {
+					$this->dontHavePost( $post_id );
+				}
 			}
 
-			if ( $this->saved_query_id ) {
-				$mutation = 'mutation deleteSavedQuery($var: DeleteGraphqlDocumentInput!) { deleteGraphqlDocument (input: $var) { graphqlDocument { id } } }';
-				$vars = [
-					"var" => [
-						"id" => $this->saved_query_id
-					]
-				];
-				$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
-				$this->saved_query_id = null;
+			if ( $this->post_query_id ) {
+				$this->dontHaveSavedQuery($this->post_query_id );
+				$this->post_query_id = null;
 			}
 		}
 
