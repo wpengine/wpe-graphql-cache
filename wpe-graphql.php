@@ -25,23 +25,23 @@ const MAGIC_STRING = 'wpe-graphql:';
  * See the wpengine must-use plugin for the 'wpe_purge_varnish_cache_paths' filter.
  * 
  * @param array    $paths  Path, urls to pages cached in varnish to be purged.
- * @param int   $identifer The requested post_id to purge if one was passed
+ * @param int   $identifier The requested post_id to purge if one was passed
  *  or string 'wpe-graphql:all', 'wpe-graphql:cG9zdDo1NjQ='
  */
-add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifer ) {
+add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifier ) {
 
 	if ( ! is_array( $paths ) ) {
 		$paths = [];
 	}
 
-	error_log( "Purge Varnish: $identifer " );
+	error_log( "Purge Varnish: $identifier " );
 
 	// When any post changes, look up graphql paths previously queried containing post resources and purge those
 	$collection = new Collection();
-	if ( is_int( $identifer ) ) {
-		$id = Relay::toGlobalId( 'post', $identifer );
+	if ( is_int( $identifier ) ) {
+		$id = Relay::toGlobalId( 'post', $identifier );
 	} else {
-		$id = substr( $identifer, strlen( MAGIC_STRING ) );
+		$id = substr( $identifier, strlen( MAGIC_STRING ) );
 
 		// Do something when we trigger varnish purge with an indicator id
 		if ( false === $id ) {
@@ -71,7 +71,8 @@ add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifer ) {
 				// Add these specific paths to be purged
 				foreach ( $urls as $url ) {
 					// escape any regex characters
-					$paths[] = preg_quote( $url );
+					error_log( 'Graphql Purge url pre quote: ' . $url );
+					$paths[] = $url;
 				}
 			}
 		}
