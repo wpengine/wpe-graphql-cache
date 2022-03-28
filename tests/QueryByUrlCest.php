@@ -1,25 +1,20 @@
 <?php
 /**
- * This collection of tests is intended to:
- *  create a post
- *  query the post, maybe multiple times
- *  verify content cache hit count
- *  update the post
- *  query the post and verify the cache hit count
- *  purge the cache
- *  query the post and verify the cache hit count
+ * Compare a graphql GET query string vs saved as a queryId.
+ * Verify cache purges each.
  * 
  */
-class PostCacheCest
+class QueryByUrlCest
 {
-	// The post id created during tests
+	// The post id created during tests, and needing cleanup
 	public $post_id_1;
-	public $post_id_2;
 
 	// Use the following data on example post create/update
-	public $post_title = "Cache Post Runner";
-	public $post_content_0 = "initial post content";
-	public $post_content_1 = "secondary post content";
+	public $post_title = "Cache Url Runner";
+	public $post_content_0 = "initial url test content";
+	public $post_content_1 = "secondary url test content";
+
+	public $post_query_string;
 
 	public function SetupAtTheBeginning( AcceptanceTester $I )
 	{
@@ -35,9 +30,15 @@ class PostCacheCest
 		$post['content'] = $this->post_content_0;
 		$this->post_id_1 = $I->havePost( $post );
 
-		$post['title'] = $this->post_title . ' 2';
-		$post['content'] = $this->post_content_0 . ' 2';
-		$this->post_id_2 = $I->havePost( $post );
+		// Graphql query string for specific post.
+		// We want to make sure this post also purges because it references the same post_id
+		$this->post_query_string = sprintf( '{
+			post(id: "%s", idType: ID) {
+				title
+				content
+			}
+		}', $this->post_id_1 );
+
 	}
 
 	/**
@@ -46,30 +47,23 @@ class PostCacheCest
 	 */
 	public function VerifySeeCacheHeaderTest( AcceptanceTester $I )
 	{
+		// Make two queries. Verify the second one is cached.
 		$I->seePostById( $this->post_id_1 );
-		$response = $I->grabDataByPost();
-		$I->assertEquals( $this->post_title, $response['title'] );
-		$I->assertEquals( "<p>{$this->post_content_0}</p>\n", $response['content'] );
-		$I->seeHttpHeader('X-Cache', 'MISS');
-
-		// Query again and see the cached version
 		$I->seePostById( $this->post_id_1 );
 		$response = $I->grabDataByPost();
 		$I->assertEquals( $this->post_title, $response['title'] );
 		$I->assertEquals( "<p>{$this->post_content_0}</p>\n", $response['content'] );
 		$I->seeHttpHeader('X-Cache', 'HIT: 1');
+	}
 
-		$I->seePostById( $this->post_id_2 );
+	public function VerifySeeCacheHeader2Test( AcceptanceTester $I )
+	{
+		// Make two queries. Verify the second one is cached.
+		$I->sendQuery( $this->post_query_string );
+		$I->sendQuery( $this->post_query_string );
 		$response = $I->grabDataByPost();
-		$I->assertEquals( $this->post_title . ' 2', $response['title'] );
-		$I->assertEquals( "<p>{$this->post_content_0} 2</p>\n", $response['content'] );
-		$I->seeHttpHeader('X-Cache', 'MISS');
-
-		// Query again and see the cached version
-		$I->seePostById( $this->post_id_2 );
-		$response = $I->grabDataByPost();
-		$I->assertEquals( $this->post_title . ' 2', $response['title'] );
-		$I->assertEquals( "<p>{$this->post_content_0} 2</p>\n", $response['content'] );
+		$I->assertEquals( $this->post_title, $response['title'] );
+		$I->assertEquals( "<p>{$this->post_content_0}</p>\n", $response['content'] );
 		$I->seeHttpHeader('X-Cache', 'HIT: 1');
 	}
 
@@ -92,17 +86,21 @@ class PostCacheCest
 		$response = $I->grabDataByPost();
 		$I->assertEquals( $this->post_title, $response['title'] );
 		$I->assertEquals( "<p>{$this->post_content_1}</p>\n", $response['content'] );
+	}
 
-		// Query second post and see the cached version
-		$I->seePostById( $this->post_id_2 );
+	public function CheckForCacheMiss2Test( AcceptanceTester $I )
+	{
+		// Query using string should also purge
+		$I->sendQuery( $this->post_query_string );
+		$I->seeHttpHeader('X-Cache', 'MISS');
 		$response = $I->grabDataByPost();
-		$I->assertEquals( $this->post_title . ' 2', $response['title'] );
-		$I->assertEquals( "<p>{$this->post_content_0} 2</p>\n", $response['content'] );
-		$I->seeHttpHeader('X-Cache', 'HIT: 2');
+		$I->assertEquals( $this->post_title, $response['title'] );
+		$I->assertEquals( "<p>{$this->post_content_1}</p>\n", $response['content'] );
 	}
 
 	public function CleanUpAtTheEnd( AcceptanceTester $I )
 	{
-		$I->cleanUp();
+		//$I->cleanUp();
 	}
+
 }

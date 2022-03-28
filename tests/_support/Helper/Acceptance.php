@@ -12,24 +12,37 @@ namespace Helper;
 class Acceptance extends \Codeception\Module
 {
 	// The admin login token
-	public $auth_token;
+	protected $auth_token;
 
 	// Clean up what we created at the end of all the tests in this suite
 	public $should_cleanup = true;
 
 	// Use this to delete the saved query
-	public $post_query_id;
+	protected $post_query_id;
 
 	// Use this as the queryId
-	public $post_query_alias;
+	protected $post_query_alias;
+
+	// The query string
+	protected $post_query_string;
 
 	// The post ids created during tests, and needing cleanup
-	public $created_posts = [];
+	protected $created_posts = [];
 
-	public function _beforeSuite($settings = [])
+	public function setUp()
 	{
 		$this->login();
 		$this->haveQueryForSinglePost();
+	}
+
+	/**
+	 * Send graphql GET request.
+	 * TODO: Add vars and operation name as params.
+	 *
+	 */
+	public function sendQuery( $query )
+	{
+		$this->getModule('REST')->sendGet('graphql', [ 'query' => $query ] );
 	}
 
 	public function login()
@@ -62,14 +75,19 @@ class Acceptance extends \Codeception\Module
 		// This query alias will be used as the queryId in our GET request to check cache requests.
 		$this->post_query_alias = uniqid( "test_runner_" );
 
-		$query = sprintf( 'query get_post_%s ($post: ID!) {
+		$this->post_query_string = sprintf( 'query get_post_%s ($post: ID!) {
 			post(id: $post) {
 				id
 				title
 				content
 			}
 		}', $this->post_query_alias );
-		$this->post_query_id = $this->haveSavedQuery( $query, [ $this->post_query_alias ] );
+		$this->post_query_id = $this->haveSavedQuery( $this->post_query_string, [ $this->post_query_alias ] );
+	}
+
+	public function grabQueryForSinglePost()
+	{
+		return $this->post_query_string;
 	}
 
 	/**
@@ -195,8 +213,7 @@ class Acceptance extends \Codeception\Module
 	 * Query graphql server and verify single post id exists.
 	 * Uses saved queryId mutation.
 	 *
-	 * param $url
-	 * param array $params
+	 * param string $post_id post node id
 	 */
 	public function seePostById( $post_id )
 	{
