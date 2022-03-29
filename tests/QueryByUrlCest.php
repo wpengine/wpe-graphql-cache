@@ -100,7 +100,7 @@ class QueryByUrlCest
 
 	public function CleanUpAtTheEnd( AcceptanceTester $I )
 	{
-		//$I->cleanUp();
+		$I->cleanUp();
 	}
 
 }
