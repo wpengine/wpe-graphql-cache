@@ -34,7 +34,7 @@ add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifier ) {
 		$paths = [];
 	}
 
-	error_log( "Purge Varnish: $identifier " );
+	error_log( "WpeGraphql Purge Varnish: $identifier " );
 
 	// When any post changes, look up graphql paths previously queried containing post resources and purge those
 	$collection = new Collection();
@@ -59,7 +59,7 @@ add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifier ) {
 
 	$key = $collection->node_key( $id );
 	$nodes = $collection->get( $key );
-	error_log( "Graphql Purge Post: $key " . print_r($nodes, 1) );
+	error_log( "WpeGraphql Purge Post: $key " . print_r($nodes, 1) );
 
 	// Get the list of queries associated with this key
 	if ( is_array( $nodes ) ) {
@@ -70,15 +70,16 @@ add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifier ) {
 			if ( is_array( $urls ) ) {
 				// Add these specific paths to be purged
 				foreach ( $urls as $url ) {
-					// escape any regex characters
-					error_log( 'Graphql Purge url pre quote: ' . $url );
-					$paths[] = $url;
+					// The saved url was raw, unencoded. quote/escape any regex characters in the path for varnish to purge.
+					$quoted_url = preg_quote( $url );
+					error_log( 'WpeGraphql Purge url: ' . $quoted_url );
+					$paths[] = $quoted_url;
 				}
 			}
 		}
 	}
 
-	error_log( 'Graphql Purge Paths: ' . print_r($paths, 1) );
+	error_log( 'WpeGraphql Purge Paths: ' . print_r($paths, 1) );
 	return array_unique( $paths );
 }, 10, 2 );
 
@@ -87,7 +88,7 @@ add_action( 'wpgraphql_cache_purge_all', function () {
 	 * Invoke the WPE varnish purge function with specific identifier
 	 */
 	if ( method_exists( WpeCommon, 'purge_varnish_cache' ) ) {
-		error_log( 'Trigger Varnish Purge ' );
+		error_log( 'WpeGraphql Trigger Varnish Purge ' );
 		\WpeCommon::purge_varnish_cache( MAGIC_STRING . 'all' );
 	}
 }, 10 );
