@@ -20,6 +20,11 @@ use GraphQLRelay\Relay;
 
 const MAGIC_STRING = 'wpe-graphql:';
 
+function log( $msg ) {
+	error_log( $msg );
+	graphql_debug( $msg, $config[ 'debug' ] );
+}
+
 /**
  * For wpe, when our varnish cache function is invoked, add to paths being filtered.
  * See the wpengine must-use plugin for the 'wpe_purge_varnish_cache_paths' filter.
@@ -30,65 +35,73 @@ const MAGIC_STRING = 'wpe-graphql:';
  */
 add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifier ) {
 
-	if ( ! is_array( $paths ) ) {
-		$paths = [];
+	// If the id doesn't start with our magic string, that means we didn't initiate the purge.
+	$id = substr( $identifier, 0, strlen( MAGIC_STRING ) );
+	if ( MAGIC_STRING !== $id ) {
+		// If not initiated by us, return
+		return $paths;
 	}
 
-	error_log( "WpeGraphql Purge Varnish: $identifier " );
+	log( "WpeGraphql Purge Varnish: $identifier " );
 
-	// When any post changes, look up graphql paths previously queried containing post resources and purge those
+	// Get the rest of the string after our magic string
+	$id = substr( $identifier, strlen( MAGIC_STRING ) );
+
+	if ( 'all' === $id ) {
+		// This purges all cached pages at graphql endpoint.
+		return [ preg_quote( Settings::graphql_endpoint() ) ];
+	}
+
+	// Erase any other paths cause we triggered this and want to purge something specific.
+	$paths = [];
+
 	$collection = new Collection();
-	if ( is_int( $identifier ) ) {
-		$id = Relay::toGlobalId( 'post', $identifier );
-	} else {
-		$id = substr( $identifier, strlen( MAGIC_STRING ) );
-
-		// Do something when we trigger varnish purge with an indicator id
-		if ( false === $id ) {
-			return $paths;
-		}
-
-		// Erase any other wpe paths cause we triggered this and want to purge something specific
-		$paths = [];
-
-		if ( 'all' === $id ) {
-			// This purges all cached pages at graphql endpoint.
-			$paths[] = preg_quote( Settings::graphql_endpoint() );
-		}
-	}
-
-	$key = $collection->node_key( $id );
-	$nodes = $collection->get( $key );
-	error_log( "WpeGraphql Purge Post: $key " . print_r($nodes, 1) );
+	$nodes = $collection->get( $id );
+	log( "WpeGraphql Purge Post: $id " . print_r($nodes, 1) );
 
 	// Get the list of queries associated with this key
+	// Look up graphql path/urls previously queried containing resources and purge those
 	if ( is_array( $nodes ) ) {
 		foreach( $nodes as $request_key ) {
-			$urls_key = $collection->url_key( $request_key );
-			$urls = $collection->get( $urls_key );
+			$urls = $collection->retrieve_urls( $request_key );
 
 			if ( is_array( $urls ) ) {
 				// Add these specific paths to be purged
 				foreach ( $urls as $url ) {
 					// The saved url was raw, unencoded. quote/escape any regex characters in the path for varnish to purge.
 					$quoted_url = preg_quote( $url );
-					error_log( 'WpeGraphql Purge url: ' . $quoted_url );
+					log( 'WpeGraphql Purge url: ' . $quoted_url );
 					$paths[] = $quoted_url;
 				}
 			}
 		}
 	}
 
-	error_log( 'WpeGraphql Purge Paths: ' . print_r($paths, 1) );
+	log( 'WpeGraphql Purge Paths: ' . print_r($paths, 1) );
+
 	return array_unique( $paths );
 }, 10, 2 );
 
-add_action( 'wpgraphql_cache_purge_all', function () {
+add_action( 'wpgraphql_cache_purge_all', function ( $type, $id, $nodes ) {
 	/**
 	 * Invoke the WPE varnish purge function with specific identifier
 	 */
 	if ( method_exists( WpeCommon, 'purge_varnish_cache' ) ) {
-		error_log( 'WpeGraphql Trigger Varnish Purge ' );
-		\WpeCommon::purge_varnish_cache( MAGIC_STRING . 'all' );
+		log( 'WpeGraphql Trigger Varnish Purge All' );
+		// Second argument is 'force'.
+		\WpeCommon::purge_varnish_cache( MAGIC_STRING . 'all', true );
 	}
-}, 10 );
+}, 10, 3);
+
+add_action( 'wpgraphql_cache_purge_nodes', function ( $type, $id, $nodes ) {
+	/**
+	 * Invoke the WPE varnish purge function with specific identifier
+	 */
+	if ( method_exists( WpeCommon, 'purge_varnish_cache' ) ) {
+		log( 'WpeGraphql Trigger Varnish Purge '. $id );
+		// Second argument is 'force'.
+		\WpeCommon::purge_varnish_cache( MAGIC_STRING . $id, true );
+		log( 'WpeGraphql Trigger Varnish Purge - After '. $id );
+	}
+}, 10, 3);
+
