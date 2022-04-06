@@ -69,9 +69,7 @@ add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifier ) {
 				// Add these specific paths to be purged
 				foreach ( $urls as $url ) {
 					// The saved url was raw, unencoded. quote/escape any regex characters in the path for varnish to purge.
-					$quoted_url = preg_quote( $url );
-					log( 'WpeGraphql Purge url: ' . $quoted_url );
-					$paths[] = $quoted_url;
+					$paths[] = preg_quote( $url );
 				}
 			}
 		}
@@ -86,7 +84,7 @@ add_action( 'wpgraphql_cache_purge_all', function ( $type, $id, $nodes ) {
 	/**
 	 * Invoke the WPE varnish purge function with specific identifier
 	 */
-	if ( method_exists( WpeCommon, 'purge_varnish_cache' ) ) {
+	if ( is_callable( [ 'WpeCommon', 'purge_varnish_cache' ] ) ) {
 		log( 'WpeGraphql Trigger Varnish Purge All' );
 		// Second argument is 'force'.
 		\WpeCommon::purge_varnish_cache( MAGIC_STRING . 'all', true );
@@ -97,7 +95,7 @@ add_action( 'wpgraphql_cache_purge_nodes', function ( $type, $id, $nodes ) {
 	/**
 	 * Invoke the WPE varnish purge function with specific identifier
 	 */
-	if ( method_exists( WpeCommon, 'purge_varnish_cache' ) ) {
+	if ( is_callable( [ 'WpeCommon', 'purge_varnish_cache' ] ) ) {
 		log( 'WpeGraphql Trigger Varnish Purge '. $id );
 		// Second argument is 'force'.
 		\WpeCommon::purge_varnish_cache( MAGIC_STRING . $id, true );
