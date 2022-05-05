@@ -75,6 +75,11 @@ add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifier ) {
 		}
 	}
 
+	// If got here but don't have any actual paths, have to return something, otherwise WPE will purge everything
+	if ( empty( $paths ) ) {
+		$paths = [ preg_quote( Settings::graphql_endpoint() . '/' . uniqid('--notreal--') ) ];
+	}
+
 	log( 'WpeGraphql Purge Paths: ' . print_r($paths, 1) );
 
 	return array_unique( $paths );
