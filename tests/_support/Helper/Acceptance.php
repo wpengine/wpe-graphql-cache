@@ -85,6 +85,10 @@ class Acceptance extends \Codeception\Module
 		$this->post_query_id = $this->haveSavedQuery( $this->post_query_string, [ $this->post_query_alias ] );
 	}
 
+	public function dontHaveQueryForSinglePost () {
+		$this->dontHaveSavedQuery( $this->post_query_id );
+	}
+
 	public function grabQueryForSinglePost()
 	{
 		return $this->post_query_string;
@@ -260,10 +264,9 @@ class Acceptance extends \Codeception\Module
 			}
 
 			if ( $this->post_query_id ) {
-				$this->dontHaveSavedQuery($this->post_query_id );
+				$this->dontHaveQueryForSinglePost();
 				$this->post_query_id = null;
 			}
 		}
-
 	}
 }
