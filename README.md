@@ -10,7 +10,7 @@ Install the following plugins in the WP at WP Engine:
 
 - [wp-graphql](https://github.com/wp-graphql/wp-graphql)
 - [wp-graphql-labs](https://github.com/wp-graphql/wp-graphql-labs)
-- [wpe-graphql](https://github.com/markkelnar/wpe-graphql)
+- [wpe-graphql-cache](https://github.com/wpengine/wpe-graphql-cache)
 
 ## Enable caching results
 

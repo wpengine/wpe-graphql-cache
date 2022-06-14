@@ -1,11 +1,10 @@
 <?php
 /**
- * Plugin Name:     WP Engine Graphql Add Ons
- * Plugin URI:      PLUGIN SITE HERE
+ * Plugin Name:     WP Engine Graphql Cache
+ * Plugin URI:      https://wpengine.com
  * Description:     WP Engine add ons for wp-graphql in the WP Engine hosted WP environment
  * Author:          Mark Kelnar
- * Author URI:      YOUR SITE HERE
- * Text Domain:     wpe-graphql
+ * Text Domain:     wpe-graphql-cache
  * Domain Path:     /languages
  * Version:         0.1.0
  *
