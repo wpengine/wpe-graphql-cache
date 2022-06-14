@@ -6,23 +6,11 @@ Use the steps in this readme to configure for each WP.
 
 ## Setup the WP service
 
-Install the following plugins in the WP at WP Engine:
+Install and activate the following plugins in the WP at WP Engine:
 
 - [wp-graphql](https://github.com/wp-graphql/wp-graphql)
 - [wp-graphql-labs](https://github.com/wp-graphql/wp-graphql-labs)
 - [wpe-graphql-cache](https://github.com/wpengine/wpe-graphql-cache)
-
-## Enable caching results
-
-Log into wp-admin for the WP service.
-
-Select the GraphQL Settings tab.
-
-![Settings tab](./docs/images/wp-graphql-settings.png).
--
-Check the box to enable results caching.
-
-![The checkbox to enable the results cache](./docs/images/wp-graphql-labs-settings-cache.png).
 
 ## Use GET requests
 
@@ -57,7 +45,7 @@ Queries can be created using the GraphiQL IDE editor, using graphql mutations or
 The system is able to identify queries on the url or by query id alias name, that are identical and cache accordingly. As well as invalidate the cache as needed.  This insures that queries that are the same, are not returning different results.
 
 
-## Automatted testing
+## Automated testing
 
 You can use this plugin development code to verify caching is running for your WPE site as expeceted as well as write more tests.
 
