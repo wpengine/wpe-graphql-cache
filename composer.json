@@ -1,7 +1,7 @@
 {
-    "name": "wpengine/wpe-graphql-cache",
-    "description": "WP Engine add-ons for wp-graphql plugin",
-    "type": "wordpress-plugin",
+	"name": "wpengine/wpe-graphql-cache",
+	"description": "WP Engine add-ons for wp-graphql plugin",
+	"type": "wordpress-plugin",
 	"require-dev": {
 		"codeception/codeception": "^4.1",
 		"codeception/module-rest": "^1.3",
