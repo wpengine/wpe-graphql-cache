@@ -19,9 +19,13 @@ use GraphQLRelay\Relay;
 
 const MAGIC_STRING = 'wpe-graphql:';
 
-function log( $msg ) {
-	error_log( $msg );
-	graphql_debug( $msg, $config[ 'debug' ] );
+if ( ! function_exists( __NAMESPACE__ . 'log' ) ) {
+	function log( $msg ) {
+		if ( defined('GRAPHQL_DEBUG_ENABLED') ) {
+			error_log( $msg );
+			graphql_debug( $msg, $config[ 'debug' ] );
+		}
+	}
 }
 
 /**
@@ -84,7 +88,7 @@ add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifier ) {
 	return array_unique( $paths );
 }, 10, 2 );
 
-add_action( 'wpgraphql_cache_purge_all', function ( $type, $id, $nodes ) {
+add_action( 'wpgraphql_cache_purge_all', function () {
 	/**
 	 * Invoke the WPE varnish purge function with specific identifier
 	 */
@@ -93,9 +97,9 @@ add_action( 'wpgraphql_cache_purge_all', function ( $type, $id, $nodes ) {
 		// Second argument is 'force'.
 		\WpeCommon::purge_varnish_cache( MAGIC_STRING . 'all', true );
 	}
-}, 10, 3);
+}, 10, 0);
 
-add_action( 'wpgraphql_cache_purge_nodes', function ( $type, $id, $nodes ) {
+add_action( 'wpgraphql_cache_purge_nodes', function ( $id, $nodes ) {
 	/**
 	 * Invoke the WPE varnish purge function with specific identifier
 	 */
@@ -105,5 +109,4 @@ add_action( 'wpgraphql_cache_purge_nodes', function ( $type, $id, $nodes ) {
 		\WpeCommon::purge_varnish_cache( MAGIC_STRING . $id, true );
 		log( 'WpeGraphql Trigger Varnish Purge - After '. $id );
 	}
-}, 10, 3);
-
+}, 10, 2);

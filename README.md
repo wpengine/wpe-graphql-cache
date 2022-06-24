@@ -71,7 +71,7 @@ add_filter( 'graphql_jwt_auth_secret_key', function() {
 
 ### Create a Test User
 
-Log into wp-admin for the site and create a new user specific for these tests. Example user name `test-runner`. Record the username and password for use in later steps.  Role for this user should be 'editor' priveleges. This allows categories to be created with post is inserted.
+Log into wp-admin for the site and create a new user specific for these tests. Example user name `test-runner`. Record the username and password for use in later steps.  Role for this user should be 'administrator' priveleges. This allows categories to be created with post is inserted and users created/deleted.
 
 ### Local environment
 
