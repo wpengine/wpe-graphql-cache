@@ -29,6 +29,9 @@ class Acceptance extends \Codeception\Module
 	// The post ids created during tests, and needing cleanup
 	protected $created_posts = [];
 
+	// The user ids created during tests, and needing cleanup
+	protected $created_users = [];
+
 	public function setUp()
 	{
 		$this->login();
@@ -152,19 +155,17 @@ class Acceptance extends \Codeception\Module
 		  }
 		';
 		$vars = [
-			"vars" => [
-				"title" => $params['title'],
-				"content" => $params['content'],
-				"status" => "PUBLISH",
-				"categories" => [
-					"nodes" => [
-						[
-							"name" => $category
-						]
-					],
-					"append" => false
-				]
-			]
+			"vars" => array_merge( [
+					"status" => "PUBLISH",
+					"categories" => [
+						"nodes" => [
+							[
+								"name" => $category
+							]
+						],
+						"append" => false
+					]
+				], $params )
 		];
 
 		$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
@@ -177,7 +178,7 @@ class Acceptance extends \Codeception\Module
 		return $response['id'];
 	}
 
-	public function updatePost( $post_id, $params )
+	public function updatePost( $post_id, $params = [] )
 	{
 		$mutation = 'mutation custom ($vars: UpdatePostInput!) {
 			updatePost(input: $vars) {
@@ -191,10 +192,7 @@ class Acceptance extends \Codeception\Module
 		';
 
 		$vars = [
-			"vars" => [
-				"id" => $post_id,
-				"content" => $params['content'],
-			]
+			"vars" => array_merge( [ "id" => $post_id ], $params )
 		];
 		$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
 		$response = $this->getModule('REST')->grabDataFromResponseByJsonPath('$..data.updatePost.post')[0];
@@ -250,6 +248,73 @@ class Acceptance extends \Codeception\Module
 	}
 
 	/**
+	 * Create a WP user for these test scenarios. Will be cleaned up after the suite run completes.
+	 *
+	 * param $params
+	 *  'username'
+	 *  'firstName'
+	 *  'lastName'
+	 */
+	public function haveUser( $params = [] )
+	{
+		$category = "test-runner";
+		$mutation = 'mutation custom ($vars: CreateUserInput!) {
+			createUser(input: $vars) {
+				user {
+					id
+					userId
+					username
+					firstName
+					lastName
+				}
+			}
+		}
+		';
+		$vars = [
+			"vars" => $params
+		];
+
+		$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
+		$response = $this->getModule('REST')->grabDataFromResponseByJsonPath('$..data.createUser.user')[0];
+		$this->created_users[] = $response['userId'];
+
+		$this->getModule('Asserts')->assertEquals( $params['username'], $response['username'] );
+
+		return $response['userId'];
+	}
+
+	public function updateUser( $user_id, $params = [] )
+	{
+		$mutation = 'mutation custom ($vars: UpdateUserInput!) {
+			updateUser(input: $vars) {
+			  user {
+				userId
+				username
+			  }
+			}
+		  }
+		';
+
+		$vars = [
+			"vars" => array_merge( [ 'id' => $user_id ], $params )
+		];
+		$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
+		$response = $this->getModule('REST')->grabDataFromResponseByJsonPath('$..data.updateUser.user')[0];
+
+		$this->getModule('Asserts')->assertEquals( $user_id, $response['userId'] );
+
+	}
+
+	public function dontHaveUser( $user_id, $params = [] )
+	{
+		$mutation = 'mutation deleteUser($var: DeleteUserInput!) { deleteUser (input: $var) { deletedId } }';
+		$vars = [
+			"var" => array_merge( [ 'id' => $user_id ], $params )
+		];
+		$this->sendAuthenticatedPost('graphql', [ 'query' => $mutation, 'variables' => $vars ] );
+	}
+
+	/**
 	 * Call at the end of the suite run
 	 */
 	public function cleanUp()
@@ -266,6 +331,12 @@ class Acceptance extends \Codeception\Module
 			if ( $this->post_query_id ) {
 				$this->dontHaveQueryForSinglePost();
 				$this->post_query_id = null;
+			}
+
+			if ( $this->created_users ) {
+				foreach ( $this->created_users as $user_id ) {
+					$this->dontHaveUser( $user_id );
+				}
 			}
 		}
 	}
