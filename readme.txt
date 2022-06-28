@@ -16,7 +16,7 @@ Works with Apollo Persisted Queries JavaScript client.
 
 Optimized your wp-graphql requests and Javascript client by using GET for your graphql requests to the WP. At WP Engine, these requests will be optimized in WP Engine's EverCache environment.
 
-This plugin integrates with the wp-graphql-labs caching extension plugin to correctly invalidate cached data when it changes in your plugin.
+This plugin integrates with the wp-graphql-smart-cache caching extension plugin to correctly invalidate cached data when it changes in your plugin.
 
 == Changelog ==
 
