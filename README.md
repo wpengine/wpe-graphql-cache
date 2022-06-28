@@ -9,7 +9,7 @@ Use the steps in this readme to configure for each WP.
 Install and activate the following plugins in the WP at WP Engine:
 
 - [wp-graphql](https://github.com/wp-graphql/wp-graphql)
-- [wp-graphql-labs](https://github.com/wp-graphql/wp-graphql-labs)
+- [wp-graphql-smart-cache](https://github.com/wp-graphql/wp-graphql-smart-cache)
 - [wpe-graphql-cache](https://github.com/wpengine/wpe-graphql-cache)
 
 ## Use GET requests
@@ -22,7 +22,7 @@ Make the graphql request again and verify the cache header is a `Miss`, then the
 
 ## Use saved query names/aliases
 
-Instead of passing the full graphql 'query { string }' on the url for the request, with the [wp-graphql-labs](https://github.com/wp-graphql/wp-graphql-labs) plugin, you can make use of easy to remember query names instead.
+Instead of passing the full graphql 'query { string }' on the url for the request, with the [wp-graphql-smart-cache](https://github.com/wp-graphql/wp-graphql-smart-cache) plugin, you can make use of easy to remember query names instead.
 
 For example,
 
@@ -36,7 +36,7 @@ Could be saved in the system and queried as
 https://content.example.com/graphql?queryId=posts-about-coffee
 ```
 
-To create queries, see documentation at the [wp-graphql-labs](https://github.com/wp-graphql/wp-graphql-labs/) plugin.
+To create queries, see documentation at the [wp-graphql-smart-cache](https://github.com/wp-graphql/wp-graphql-smart-cache/) plugin.
 
 Queries can be created using the GraphiQL IDE editor, using graphql mutations or the wp-admin editor (enable the setting to show queries in the wp-admin menu).
 
