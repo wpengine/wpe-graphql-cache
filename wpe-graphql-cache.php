@@ -6,7 +6,7 @@
  * Author:          Mark Kelnar
  * Text Domain:     wpe-graphql-cache
  * Domain Path:     /languages
- * Version:         0.1.2
+ * Version:         0.1.3
  *
  * @package         Wpe_Graphql
  */

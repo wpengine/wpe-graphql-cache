@@ -4,7 +4,7 @@ Tags: graphql, wp-graphql
 Requires at least: 4.5
 Tested up to: 5.8.3
 Requires PHP: 7.1
-Stable tag: 0.1.2
+Stable tag: 0.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,6 +19,10 @@ Optimized your wp-graphql requests and Javascript client by using GET for your g
 This plugin integrates with the [WPGraphQL Smart Cache](https://github.com/wp-graphql/wp-graphql-smart-cache) plugin to correctly invalidate cached data when it changes in your plugin.
 
 == Changelog ==
+
+= 0.1.3 =
+
+- fixes bug where undefined function was being called.
 
 = 0.1.2 =
 
