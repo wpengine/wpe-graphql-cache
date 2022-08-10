@@ -6,7 +6,7 @@
  * Author:          Mark Kelnar
  * Text Domain:     wpe-graphql-cache
  * Domain Path:     /languages
- * Version:         0.1.0
+ * Version:         0.1.2
  *
  * @package         Wpe_Graphql
  */
@@ -31,7 +31,7 @@ if ( ! function_exists( __NAMESPACE__ . 'log' ) ) {
 /**
  * For wpe, when our varnish cache function is invoked, add to paths being filtered.
  * See the wpengine must-use plugin for the 'wpe_purge_varnish_cache_paths' filter.
- * 
+ *
  * @param array    $paths  Path, urls to pages cached in varnish to be purged.
  * @param int   $identifier The requested post_id to purge if one was passed
  *  or string 'wpe-graphql:all', 'wpe-graphql:cG9zdDo1NjQ='
