@@ -65,7 +65,7 @@ add_filter( 'wpe_purge_varnish_cache_paths', function ( $paths, $identifier ) {
 	// Look up graphql path/urls previously queried containing resources and purge those
 	if ( is_array( $nodes ) ) {
 		foreach( $nodes as $request_key ) {
-			$urls = $collection->retrieve_urls( $request_key );
+			$urls = wpe_cache_retrieve_urls( $request_key );
 
 			if ( is_array( $urls ) ) {
 				// Add these specific paths to be purged
