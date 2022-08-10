@@ -13,9 +13,8 @@
 
 namespace WPEngine\Graphql;
 
-use WPGraphQL\Labs\Cache\Collection;
-use WPGraphQL\Labs\Admin\Settings;
-use GraphQLRelay\Relay;
+use WPGraphQL\SmartCache\Cache\Collection;
+use WPGraphQL\SmartCache\Admin\Settings;
 
 const MAGIC_STRING = 'wpe-graphql:';
 
@@ -110,3 +109,47 @@ add_action( 'wpgraphql_cache_purge_nodes', function ( $id, $nodes ) {
 		log( 'WpeGraphql Trigger Varnish Purge - After '. $id );
 	}
 }, 10, 2);
+
+
+add_action( 'wpgraphql_cache_save_request', function( $request_key ) {
+	// Only store mappings of urls when it's a GET request
+	$map_the_url = false;
+	if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' === $_SERVER['REQUEST_METHOD'] ) {
+		$map_the_url = true;
+	}
+
+	// We don't want POSTs during mutations or nothing on the url. cause it'll purge /graphql*
+	if ( $map_the_url && ! empty( $_SERVER['REQUEST_URI'] ) ) {
+		$url_to_save = wp_unslash( $_SERVER['REQUEST_URI'] );
+
+		// Save the url this query request came in on, so we can purge it later when something changes
+		$collection = new Collection();
+		$urls = $collection->store_content( wpe_cache_url_key( $request_key ), $url_to_save );
+
+		log( "Graphql Save Urls: $request_key " . print_r( $urls, 1 ) );
+	}
+}, 10, 1 );
+
+/**
+ * When save or retrieve urls for a specific Unique identifier for this request for use in the collection map
+ *
+ * @param string $id Id for the node
+ *
+ * @return string unique id for this request
+ */
+function wpe_cache_url_key( $id ) {
+	return 'url:' . $id;
+}
+
+/**
+ * Get the list of urls associated with the content/node/list id
+ *
+ * @param mixed|string|int $id The content node identifier
+ *
+ * @return array The unique list of content stored
+ */
+function wpe_cache_retrieve_urls( $id ) {
+	$key = wpe_cache_url_key( $id );
+	$collection = new Collection();
+	return $collection->get( $key );
+}
