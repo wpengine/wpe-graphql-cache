@@ -1,3 +1,10 @@
+🚨🚨🚨🚨🚨
+
+# NOTE: THIS PLUGIN IS NO LONGER REQUIRED FOR USE WITH THE WPGRAPHQL SMART CACHE PLUGIN
+
+🚨🚨🚨🚨🚨
+
+
 # Welcome
 
 This plugin is used to optimize the caching experience of graphql GET requests to the WP site at WP Engine's hosted WordPress product.
